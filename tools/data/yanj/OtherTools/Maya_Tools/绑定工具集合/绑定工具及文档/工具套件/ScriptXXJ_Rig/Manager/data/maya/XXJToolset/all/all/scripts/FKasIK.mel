@@ -1,0 +1,133 @@
+ 
+global proc FKasIK (){
+string $fkasik[]= `ls -sl`;
+
+if(`size $fkasik[0]`> 0 )
+FK_IK $fkasik[0];
+else
+inViewMessage -smg "ÇëÑ¡ÔñIK,FK¿ØÖÆÆ÷"  -bkc 0x00000000 -fade;
+}
+
+global proc FK_IK(string $selectCurve){
+string $characterName[], $CurveName[],$xform[];
+string  $NameG[],$NameO[],$removeNamespace[],$removeName[];
+
+//string $op[]=`ls -sl`;
+//$selectCurve = $op[0];
+	tokenize $selectCurve ":" $characterName;
+	string $all_ctrl[] = {$selectCurve};
+
+for($i=0;$i<size($all_ctrl);$i++)
+		{
+			tokenize $all_ctrl[$i] "|" $NameG;
+			tokenize ($NameG[size($NameG)-1]) ":" $NameO;
+			if(size($NameO) !=0)
+			{
+				stringArrayRemoveAtIndex(size($NameO)-1, $NameO);
+				if(size($NameO)==0)
+					$result[$i] = substituteAllString($all_ctrl[$i],($NameO[0]+":"), "");	
+				if(size($NameO)==1)
+					$result[$i] = substituteAllString($all_ctrl[$i],($NameO[0]+":"), "");						
+				if(size($NameO) ==2 )
+					$result[$i] = substituteAllString($all_ctrl[$i],($NameO[0]+":"+$NameO[1]+":"), "");						
+				//if(size($NameO) ==3)
+					//$result[$i] = substituteAllString($all_ctrl[$i],($NameO[0]+":"+$NameO[1]+":"), "");	
+					$removeNamespace[$i] = $result[$i];
+					}
+			}
+
+string $fkikMove[]= {"FKIKArm_R","FKIKArm_L","FKIKLeg_L","FKIKLeg_R","FKIKSpine_M" };
+string $diff[] = stringArrayRemove( $fkikMove,$removeNamespace);
+
+	tokenize $diff[0] "_" $CurveName;
+
+
+if(`match  "Leg"  $CurveName[0]` ==  "Leg" || `match "Hip" $CurveName[0]` ==  "Hip" || `match "Knee" $CurveName[0]` ==  "Knee" || `match "Ankle" $CurveName[0]` ==  "Ankle"){
+
+	if(`match "FK" $CurveName[0]` == "FK")
+		$legas = "Leg";
+	else
+		$legas = "Hip";
+
+	$xform = {$legas,"Knee","Ankle"};
+}
+else if(`match "Arm" $CurveName[0]` == "Arm" || `match "Shoulder" $CurveName[0]` == "Shoulder" || `match "Elbow" $CurveName[0]` ==  "Elbow" ||`match "Wrist" $CurveName[0]` == "Wrist"){
+
+	if(`match "FK" $CurveName[0]` == "FK")
+		$armas = "Arm";
+	else
+		$armas = "Shoulder";
+
+	$xform = {$armas,"Elbow","Wrist"};
+}
+
+//print $xform;
+
+if(size($xform) != 0){
+////////////////////////////////////////////////////////////////////////////
+
+if(`match  ":" $selectCurve` ==  ":")
+	$Temp = ($characterName[0]+":"+"FKIK");
+else
+	$Temp = "FKIK";
+	
+if(`match  ":" $selectCurve` ==  ":")
+	$FKIK_xform = ($characterName[0]+":"+"FKIK");
+else
+	$FKIK_xform = "FKIK";
+
+if(`match  ":" $selectCurve` ==  ":")
+	$FK_xform = ($characterName[0]+":"+"FK");
+else
+	$FK_xform = "FK";
+
+if(`match  ":" $selectCurve` ==  ":")
+	$IK_xform = ($characterName[0]+":"+"IK");
+else
+	$IK_xform = "IK";
+
+if(`match  ":" $selectCurve` ==  ":")
+	$Pole = ($characterName[0]+":"+"Pole");
+else
+	$Pole = "Pole";
+
+
+if( `match "IK" $CurveName[0]` == "IK" ||`match "Pole" $CurveName[0]` == "Pole"  ){
+	if( `match "IKArm" $CurveName[0]` == "IKArm"  || `match "PoleArm" $CurveName[0]` == "PoleArm")
+		setAttr ($Temp+"Arm_"+$CurveName[1]+"."+"FKIKBlend") 0;
+	if( `match "IKLeg" $CurveName[0]` == "IKLeg" || `match "PoleLeg" $CurveName[0]` == "PoleLeg" )
+		setAttr ($Temp+"Leg_"+$CurveName[1]+"."+"FKIKBlend") 0;
+
+$FKtemp00_ro= `xform -q -ro ($FKIK_xform+"_"+$xform[0]+"_"+$CurveName[1])`;
+xform -ro $FKtemp00_ro[0] $FKtemp00_ro[1] $FKtemp00_ro[2] ($FK_xform+$xform[0]+"_"+$CurveName[1]);
+
+$FKtemp01_ro= `xform -q -ro ($FKIK_xform+"_"+$xform[1]+"_"+$CurveName[1])`;
+xform -ro $FKtemp01_ro[0] $FKtemp01_ro[1] $FKtemp01_ro[2] ($FK_xform+$xform[1]+"_"+$CurveName[1]);
+
+$FKtemp02_ro= `xform -q -ro ($FKIK_xform+"_"+$xform[2]+"_"+$CurveName[1])`;
+xform -ro $FKtemp02_ro[0] $FKtemp02_ro[1] $FKtemp02_ro[2] ($FK_xform+$xform[2]+"_"+$CurveName[1]);
+	}
+
+if( `match "FK" $CurveName[0]` == "FK"){
+
+if( `match "FKShoulder" $CurveName[0]` == "FKShoulder" || `match "FKElbow" $CurveName[0]` == "FKElbow"  ||`match "FKWrist" $CurveName[0]` == "FKWrist"||`match "Arm" $CurveName[0]` == "Arm" )
+		setAttr ($Temp+"Arm_"+$CurveName[1]+"."+"FKIKBlend") 10;
+if( `match "FKHip" $CurveName[0]` == "FKHip" || `match "FKKnee" $CurveName[0]` == "FKKnee" || `match "FKAnkle" $CurveName[0]` == "FKAnkle")
+		setAttr ($Temp+"Leg_"+$CurveName[1]+"."+"FKIKBlend") 10;
+
+
+	$IKtemp00_ro= `xform -q -ro ($FKIK_xform+"_"+$xform[0]+"_"+$CurveName[1])`;
+	xform -ro $IKtemp00_ro[0] $IKtemp00_ro[1] $IKtemp00_ro[2] ($IK_xform+$xform[0]+"_"+$CurveName[1]);
+
+	$IKtemp00_t= `xform -q -t ($FKIK_xform+"_"+$xform[0]+"_"+$CurveName[1])`;
+	xform -t $IKtemp00_t[0] $IKtemp00_t[1] $IKtemp00_t[2] ($IK_xform+$xform[0]+"_"+$CurveName[1]);
+
+	//$IKtempVp00_ro= `xform -q -ro ($FKIK_xform+"_Pole"+$xform[0]+"_"+$CurveName[1])`;
+	//xform -ro $IKtemp00_ro[0] $IKtemp00_ro[1] $IKtemp00_ro[2] ($Pole+$xform[0]+"_"+$CurveName[1]);
+
+	$IKtempVp00_t= `xform -q -t ($FKIK_xform+"_Pole"+$xform[0]+"_"+$CurveName[1])`;
+	xform -t $IKtempVp00_t[0] $IKtempVp00_t[1] $IKtempVp00_t[2] ($Pole+$xform[0]+"_"+$CurveName[1]);
+
+	}
+	}
+	}
